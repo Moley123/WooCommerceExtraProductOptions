@@ -3,7 +3,7 @@
  * Plugin Name: WooCommerce Extra Product Options
  * Plugin URI: https://github.com/Moley123/WooCommerceExtraProductOptions
  * Description: Adds handling fees and displays lowest price with "From..." prefix for variable products in WooCommerce.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Mark Lebrett
  * Author Website: https://marklebrett.co.uk
  * Author URI: https://github.com/Moley123
