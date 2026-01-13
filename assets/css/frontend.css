@@ -1,0 +1,53 @@
+/**
+ * WooCommerce Extra Product Options - Frontend Styles
+ */
+
+/* Price wrapper */
+.wcepo-price-wrapper {
+    display: inline-block;
+}
+
+/* From text styling */
+.wcepo-from-text {
+    font-weight: normal;
+    font-style: normal;
+    margin-right: 5px;
+}
+
+/* Handling fee info block */
+.wcepo-handling-fee-info {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-left: 3px solid #0073aa;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.wcepo-handling-fee-info .wcepo-handling-fee-label {
+    font-weight: 600;
+    margin-right: 5px;
+}
+
+.wcepo-handling-fee-info .wcepo-handling-fee-amount {
+    color: #333;
+}
+
+/* Ensure proper display in different themes */
+.product .summary .price .wcepo-price-wrapper,
+.product-info .price .wcepo-price-wrapper {
+    display: inline-block;
+}
+
+/* Variable product price display */
+.woocommerce-variation-price .wcepo-price-wrapper {
+    display: inline-block;
+}
+
+/* Cart handling fee display */
+.wcepo-cart-handling-fee {
+    font-size: 0.85em;
+    color: #666;
+    display: block;
+    margin-top: 3px;
+}
