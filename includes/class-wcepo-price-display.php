@@ -23,6 +23,13 @@ class WCEPO_Price_Display {
     private static $instance = null;
 
     /**
+     * Flag to prevent recursion
+     *
+     * @var bool
+     */
+    private static $calculating_price = false;
+
+    /**
      * Get single instance of the class
      *
      * @return WCEPO_Price_Display
@@ -142,20 +149,37 @@ class WCEPO_Price_Display {
             return $this->get_total_price($product);
         }
 
+        // Use get_children() instead of get_available_variations() to avoid recursion
+        $variation_ids = $product->get_children();
+
+        if (empty($variation_ids)) {
+            return 0;
+        }
+
         $min_price = PHP_FLOAT_MAX;
-        $variations = $product->get_available_variations();
+        $include_handling = get_option('wcepo_include_handling_in_price', 'yes');
 
-        foreach ($variations as $variation_data) {
-            $variation = wc_get_product($variation_data['variation_id']);
+        foreach ($variation_ids as $variation_id) {
+            $variation = wc_get_product($variation_id);
 
-            if (!$variation || !$variation->is_purchasable()) {
+            if (!$variation || !$variation->is_purchasable() || !$variation->is_in_stock()) {
                 continue;
             }
 
-            $total_price = $this->get_total_price($variation);
+            $price = (float) $variation->get_price();
 
-            if ($total_price < $min_price) {
-                $min_price = $total_price;
+            if ($price <= 0) {
+                continue;
+            }
+
+            // Add handling fee if applicable
+            if ($include_handling === 'yes') {
+                $handling_fee = $this->get_handling_fee($variation_id, $variation);
+                $price += $handling_fee;
+            }
+
+            if ($price < $min_price) {
+                $min_price = $price;
             }
         }
 
@@ -170,15 +194,29 @@ class WCEPO_Price_Display {
      * @return string
      */
     public function modify_variable_price_html($price, $product) {
+        // Prevent recursion
+        if (self::$calculating_price) {
+            return $price;
+        }
+
         if (!is_product()) {
             return $price;
         }
+
+        // Ensure we have a valid product object
+        if (!$product || !is_a($product, 'WC_Product')) {
+            return $price;
+        }
+
+        self::$calculating_price = true;
 
         $show_from = get_option('wcepo_show_from_text', 'yes');
         $from_text = get_option('wcepo_from_text', __('From', 'wc-extra-product-options'));
 
         // Get minimum total price (including handling fee if applicable)
         $min_price = $this->get_min_total_price($product);
+
+        self::$calculating_price = false;
 
         if ($min_price > 0) {
             $price_html = wc_price($min_price);
@@ -201,8 +239,18 @@ class WCEPO_Price_Display {
      * @return string
      */
     public function modify_price_html($price, $product) {
+        // Prevent recursion
+        if (self::$calculating_price) {
+            return $price;
+        }
+
         // Only modify on single product pages
         if (!is_product()) {
+            return $price;
+        }
+
+        // Ensure we have a valid product object
+        if (!$product || !is_a($product, 'WC_Product')) {
             return $price;
         }
 
