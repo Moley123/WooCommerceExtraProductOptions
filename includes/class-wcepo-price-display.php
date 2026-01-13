@@ -30,6 +30,20 @@ class WCEPO_Price_Display {
     private static $calculating_price = false;
 
     /**
+     * VCC Frontend Display instance (if available)
+     *
+     * @var VCC_Frontend_Display|null
+     */
+    private $vcc_frontend = null;
+
+    /**
+     * VCC Currency Converter instance (if available)
+     *
+     * @var VCC_Currency_Converter|null
+     */
+    private $vcc_converter = null;
+
+    /**
      * Get single instance of the class
      *
      * @return WCEPO_Price_Display
@@ -46,6 +60,7 @@ class WCEPO_Price_Display {
      */
     private function __construct() {
         $this->init_hooks();
+        $this->init_vcc_integration();
     }
 
     /**
@@ -60,6 +75,116 @@ class WCEPO_Price_Display {
 
         // Filter variation price in JSON data for JavaScript
         add_filter('woocommerce_available_variation', array($this, 'modify_variation_data'), 10, 3);
+    }
+
+    /**
+     * Initialize VCC (Vignette Currency Converter) integration
+     */
+    private function init_vcc_integration() {
+        // Check if VCC plugin is active and get instances
+        if (class_exists('VCC_Frontend_Display')) {
+            $this->vcc_frontend = VCC_Frontend_Display::get_instance();
+        }
+        if (class_exists('VCC_Currency_Converter')) {
+            $this->vcc_converter = VCC_Currency_Converter::get_instance();
+        }
+    }
+
+    /**
+     * Check if VCC currency converter is available
+     *
+     * @return bool
+     */
+    private function is_vcc_active() {
+        return $this->vcc_frontend !== null && $this->vcc_converter !== null;
+    }
+
+    /**
+     * Get the selected currency from VCC
+     *
+     * @return string Currency code (e.g., 'GBP', 'EUR', 'CHF')
+     */
+    private function get_selected_currency() {
+        if ($this->vcc_frontend && method_exists($this->vcc_frontend, 'get_selected_currency')) {
+            return $this->vcc_frontend->get_selected_currency();
+        }
+        return 'GBP';
+    }
+
+    /**
+     * Convert a GBP price to the selected currency using VCC
+     *
+     * @param float $gbp_price Price in GBP
+     * @return float Converted price
+     */
+    private function convert_price_for_display($gbp_price) {
+        if (!$this->is_vcc_active()) {
+            return $gbp_price;
+        }
+
+        $currency = $this->get_selected_currency();
+
+        // If already GBP, no conversion needed
+        if ($currency === 'GBP') {
+            return $gbp_price;
+        }
+
+        // Use VCC converter to convert from GBP to selected currency
+        if ($this->vcc_converter && method_exists($this->vcc_converter, 'convert_from_gbp')) {
+            $converted = $this->vcc_converter->convert_from_gbp($gbp_price, $currency);
+            if (!is_wp_error($converted)) {
+                return $converted;
+            }
+        }
+
+        return $gbp_price;
+    }
+
+    /**
+     * Format price with currency - uses VCC formatting if available
+     *
+     * @param float $price Price to format
+     * @return string Formatted price HTML
+     */
+    private function format_price_html($price) {
+        if (!$this->is_vcc_active()) {
+            return wc_price($price);
+        }
+
+        $currency = $this->get_selected_currency();
+
+        // If GBP, use standard WooCommerce formatting
+        if ($currency === 'GBP') {
+            return wc_price($price);
+        }
+
+        // Format with the selected currency
+        if ($this->vcc_converter && method_exists($this->vcc_converter, 'get_currency_symbol')) {
+            $symbol = $this->vcc_converter->get_currency_symbol($currency);
+            $decimals = ($currency === 'JPY') ? 0 : 2;
+            $formatted = number_format($price, $decimals);
+
+            // Format based on currency
+            switch ($currency) {
+                case 'EUR':
+                    $formatted_price = '€' . $formatted;
+                    break;
+                case 'USD':
+                case 'CAD':
+                case 'AUD':
+                    $formatted_price = $symbol . $formatted;
+                    break;
+                case 'JPY':
+                    $formatted_price = '¥' . $formatted;
+                    break;
+                default:
+                    $formatted_price = $formatted . ' ' . $currency;
+            }
+
+            return '<span class="woocommerce-Price-amount amount"><bdi>' . $formatted_price . '</bdi></span>';
+        }
+
+        return wc_price($price);
     }
 
     /**
@@ -213,13 +338,17 @@ class WCEPO_Price_Display {
         $show_from = get_option('wcepo_show_from_text', 'yes');
         $from_text = get_option('wcepo_from_text', __('From', 'wc-extra-product-options'));
 
-        // Get minimum total price (including handling fee if applicable)
-        $min_price = $this->get_min_total_price($product);
+        // Get minimum total price in GBP (including handling fee if applicable)
+        $min_price_gbp = $this->get_min_total_price($product);
 
         self::$calculating_price = false;
 
-        if ($min_price > 0) {
-            $price_html = wc_price($min_price);
+        if ($min_price_gbp > 0) {
+            // Convert to selected currency if VCC is active
+            $display_price = $this->convert_price_for_display($min_price_gbp);
+
+            // Format with appropriate currency
+            $price_html = $this->format_price_html($display_price);
 
             if ($show_from === 'yes') {
                 $price_html = '<span class="wcepo-from-text">' . esc_html($from_text) . '</span> ' . $price_html;
@@ -276,8 +405,14 @@ class WCEPO_Price_Display {
             return $price;
         }
 
-        $total_price = $product->get_price() + $handling_fee;
-        return '<span class="wcepo-price-wrapper">' . wc_price($total_price) . '</span>';
+        // Calculate total price in GBP
+        $total_price_gbp = $product->get_price() + $handling_fee;
+
+        // Convert to selected currency if VCC is active
+        $display_price = $this->convert_price_for_display($total_price_gbp);
+
+        // Format with appropriate currency
+        return '<span class="wcepo-price-wrapper">' . $this->format_price_html($display_price) . '</span>';
     }
 
     /**
@@ -297,13 +432,23 @@ class WCEPO_Price_Display {
         $data['wcepo_include_handling'] = $include_handling;
 
         if ($include_handling === 'yes' && $handling_fee > 0) {
-            $total_price = $variation->get_price() + $handling_fee;
-            $data['wcepo_total_price'] = $total_price;
-            $data['wcepo_total_price_html'] = wc_price($total_price);
+            // Calculate total price in GBP
+            $total_price_gbp = $variation->get_price() + $handling_fee;
+
+            // Convert to selected currency if VCC is active
+            $display_price = $this->convert_price_for_display($total_price_gbp);
+
+            $data['wcepo_total_price'] = $total_price_gbp;
+            $data['wcepo_total_price_display'] = $display_price;
+            $data['wcepo_total_price_html'] = $this->format_price_html($display_price);
 
             // Update display price HTML
-            $data['price_html'] = '<span class="wcepo-price-wrapper">' . wc_price($total_price) . '</span>';
+            $data['price_html'] = '<span class="wcepo-price-wrapper">' . $this->format_price_html($display_price) . '</span>';
         }
+
+        // Add currency info for JavaScript
+        $data['wcepo_currency'] = $this->get_selected_currency();
+        $data['wcepo_vcc_active'] = $this->is_vcc_active();
 
         return $data;
     }

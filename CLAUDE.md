@@ -65,6 +65,24 @@ The plugin declares compatibility with WooCommerce High-Performance Order Storag
 - Product post meta (unaffected by HPOS)
 - WooCommerce Order Item API (`add_meta_data()`)
 
+### VCC (Vignette Currency Converter) Integration
+The plugin integrates with the Vignette Currency Converter plugin for multi-currency support:
+
+**How it works:**
+1. Prices are stored and calculated in GBP (shop base currency)
+2. If VCC is active, prices are converted to the customer's selected currency
+3. Integration happens in `class-wcepo-price-display.php`
+
+**Key methods:**
+- `is_vcc_active()` - Check if VCC plugin is available
+- `get_selected_currency()` - Get customer's chosen currency from VCC
+- `convert_price_for_display($gbp_price)` - Convert GBP to selected currency
+- `format_price_html($price)` - Format with correct currency symbol
+
+**Without VCC:**
+- Plugin works standalone using WooCommerce's `wc_price()` function
+- Prices display in shop's base currency (GBP)
+
 ### Adding New Features
 1. Product-level settings go in `class-wcepo-admin.php`
 2. Global settings go in `class-wcepo-settings.php`
@@ -76,3 +94,4 @@ The plugin declares compatibility with WooCommerce High-Performance Order Storag
 2. Test variation selection updates price correctly
 3. Test handling fee appears in cart and order
 4. Verify HPOS compatibility in WooCommerce > Status > Features
+5. Test currency conversion with VCC plugin (if installed)
