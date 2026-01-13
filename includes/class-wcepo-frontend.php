@@ -74,11 +74,12 @@ class WCEPO_Frontend {
 
         global $product;
 
-        if (!$product) {
+        // Ensure we have a valid WC_Product object
+        if (!$product || !is_a($product, 'WC_Product')) {
             $product = wc_get_product(get_the_ID());
         }
 
-        if (!$product) {
+        if (!$product || !is_a($product, 'WC_Product')) {
             return;
         }
 
@@ -138,7 +139,7 @@ class WCEPO_Frontend {
 
         global $product;
 
-        if (!$product) {
+        if (!$product || !is_a($product, 'WC_Product')) {
             return;
         }
 
