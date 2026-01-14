@@ -75,6 +75,9 @@ class WCEPO_Price_Display {
 
         // Filter variation price in JSON data for JavaScript
         add_filter('woocommerce_available_variation', array($this, 'modify_variation_data'), 10, 3);
+
+        // Register shortcode for price breakdown
+        add_shortcode('wcepo_price_breakdown', array($this, 'shortcode_price_breakdown'));
     }
 
     /**
@@ -101,13 +104,32 @@ class WCEPO_Price_Display {
 
     /**
      * Get the selected currency from VCC
+     * Checks VCC's method first, then falls back to reading cookies directly
      *
      * @return string Currency code (e.g., 'GBP', 'EUR', 'CHF')
      */
-    private function get_selected_currency() {
+    public function get_selected_currency() {
+        // First try VCC's method
         if ($this->vcc_frontend && method_exists($this->vcc_frontend, 'get_selected_currency')) {
-            return $this->vcc_frontend->get_selected_currency();
+            $currency = $this->vcc_frontend->get_selected_currency();
+            if ($currency && $currency !== 'GBP') {
+                return $currency;
+            }
         }
+
+        // Fallback: Check cookie directly (in case VCC session isn't initialized yet)
+        if (isset($_COOKIE['vcc_selected_currency'])) {
+            $cookie_currency = sanitize_text_field($_COOKIE['vcc_selected_currency']);
+            if (!empty($cookie_currency)) {
+                return $cookie_currency;
+            }
+        }
+
+        // Fallback: Check session directly
+        if (isset($_SESSION['vcc_selected_currency'])) {
+            return sanitize_text_field($_SESSION['vcc_selected_currency']);
+        }
+
         return 'GBP';
     }
 
@@ -117,7 +139,7 @@ class WCEPO_Price_Display {
      * @param float $gbp_price Price in GBP
      * @return float Converted price
      */
-    private function convert_price_for_display($gbp_price) {
+    public function convert_price_for_display($gbp_price) {
         if (!$this->is_vcc_active()) {
             return $gbp_price;
         }
@@ -146,7 +168,7 @@ class WCEPO_Price_Display {
      * @param float $price Price to format
      * @return string Formatted price HTML
      */
-    private function format_price_html($price) {
+    public function format_price_html($price) {
         if (!$this->is_vcc_active()) {
             return wc_price($price);
         }
@@ -451,5 +473,138 @@ class WCEPO_Price_Display {
         $data['wcepo_vcc_active'] = $this->is_vcc_active();
 
         return $data;
+    }
+
+    /**
+     * Get price breakdown for a product (base price + handling fee)
+     *
+     * @param WC_Product $product Product object
+     * @return array Array with 'base_price', 'handling_fee', 'total', and formatted versions
+     */
+    public function get_price_breakdown($product) {
+        if (!$product || !is_a($product, 'WC_Product')) {
+            return null;
+        }
+
+        $base_price_gbp = (float) $product->get_price();
+        $handling_fee_gbp = $this->get_handling_fee($product->get_id(), $product);
+        $total_gbp = $base_price_gbp + $handling_fee_gbp;
+
+        // Convert to display currency
+        $base_price_display = $this->convert_price_for_display($base_price_gbp);
+        $handling_fee_display = $this->convert_price_for_display($handling_fee_gbp);
+        $total_display = $this->convert_price_for_display($total_gbp);
+
+        $handling_fee_label = get_option('wcepo_handling_fee_label', __('Handling Fee', 'wc-extra-product-options'));
+
+        return array(
+            'base_price_gbp' => $base_price_gbp,
+            'handling_fee_gbp' => $handling_fee_gbp,
+            'total_gbp' => $total_gbp,
+            'base_price' => $base_price_display,
+            'handling_fee' => $handling_fee_display,
+            'total' => $total_display,
+            'base_price_html' => $this->format_price_html($base_price_display),
+            'handling_fee_html' => $this->format_price_html($handling_fee_display),
+            'total_html' => $this->format_price_html($total_display),
+            'handling_fee_label' => $handling_fee_label,
+            'currency' => $this->get_selected_currency(),
+            'has_handling_fee' => $handling_fee_gbp > 0,
+        );
+    }
+
+    /**
+     * Render price breakdown HTML
+     *
+     * @param WC_Product|int $product Product object or ID
+     * @param array $args Optional arguments (show_total, wrapper_class)
+     * @return string HTML output
+     */
+    public function render_price_breakdown($product, $args = array()) {
+        if (is_numeric($product)) {
+            $product = wc_get_product($product);
+        }
+
+        if (!$product) {
+            return '';
+        }
+
+        $defaults = array(
+            'show_total' => true,
+            'wrapper_class' => 'wcepo-price-breakdown',
+            'layout' => 'vertical', // 'vertical' or 'horizontal'
+        );
+        $args = wp_parse_args($args, $defaults);
+
+        $breakdown = $this->get_price_breakdown($product);
+
+        if (!$breakdown) {
+            return '';
+        }
+
+        $layout_class = $args['layout'] === 'horizontal' ? 'wcepo-breakdown-horizontal' : 'wcepo-breakdown-vertical';
+
+        ob_start();
+        ?>
+        <div class="<?php echo esc_attr($args['wrapper_class'] . ' ' . $layout_class); ?>" data-product-id="<?php echo esc_attr($product->get_id()); ?>" data-base-price-gbp="<?php echo esc_attr($breakdown['base_price_gbp']); ?>" data-handling-fee-gbp="<?php echo esc_attr($breakdown['handling_fee_gbp']); ?>">
+            <div class="wcepo-breakdown-row wcepo-base-price">
+                <span class="wcepo-breakdown-label"><?php echo esc_html($product->get_name()); ?>:</span>
+                <span class="wcepo-breakdown-value"><?php echo $breakdown['base_price_html']; ?></span>
+            </div>
+            <?php if ($breakdown['has_handling_fee']) : ?>
+            <div class="wcepo-breakdown-row wcepo-handling-fee">
+                <span class="wcepo-breakdown-label"><?php echo esc_html($breakdown['handling_fee_label']); ?>:</span>
+                <span class="wcepo-breakdown-value"><?php echo $breakdown['handling_fee_html']; ?></span>
+            </div>
+            <?php endif; ?>
+            <?php if ($args['show_total'] && $breakdown['has_handling_fee']) : ?>
+            <div class="wcepo-breakdown-row wcepo-total">
+                <span class="wcepo-breakdown-label"><?php esc_html_e('Total', 'wc-extra-product-options'); ?>:</span>
+                <span class="wcepo-breakdown-value wcepo-total-price"><?php echo $breakdown['total_html']; ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Shortcode handler for price breakdown
+     * Usage: [wcepo_price_breakdown] or [wcepo_price_breakdown product_id="123" show_total="yes" layout="horizontal"]
+     *
+     * @param array $atts Shortcode attributes
+     * @return string HTML output
+     */
+    public function shortcode_price_breakdown($atts) {
+        $atts = shortcode_atts(array(
+            'product_id' => 0,
+            'show_total' => 'yes',
+            'layout' => 'vertical',
+            'class' => '',
+        ), $atts, 'wcepo_price_breakdown');
+
+        // Get product - use current product if no ID specified
+        $product_id = intval($atts['product_id']);
+        if (!$product_id) {
+            global $product;
+            if ($product && is_a($product, 'WC_Product')) {
+                $product_id = $product->get_id();
+            }
+        }
+
+        if (!$product_id) {
+            return '';
+        }
+
+        $wrapper_class = 'wcepo-price-breakdown';
+        if (!empty($atts['class'])) {
+            $wrapper_class .= ' ' . sanitize_html_class($atts['class']);
+        }
+
+        return $this->render_price_breakdown($product_id, array(
+            'show_total' => $atts['show_total'] === 'yes',
+            'wrapper_class' => $wrapper_class,
+            'layout' => $atts['layout'],
+        ));
     }
 }

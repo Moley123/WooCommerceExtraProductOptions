@@ -187,6 +187,10 @@ class WCEPO_Frontend {
         }
 
         $handling_fee = $price_display->get_handling_fee($actual_product_id, $product);
+        $base_price = (float) $product->get_price();
+
+        // Always store the base price for breakdown display
+        $cart_item_data['wcepo_base_price'] = $base_price;
 
         if ($handling_fee > 0) {
             $cart_item_data['wcepo_handling_fee'] = $handling_fee;
@@ -204,15 +208,32 @@ class WCEPO_Frontend {
      */
     public function display_handling_fee_in_cart($item_data, $cart_item) {
         $show_separate = get_option('wcepo_show_handling_fee_separately', 'no');
-        $include_handling = get_option('wcepo_include_handling_in_price', 'yes');
 
-        // Only show separately if not included in price display
-        if ($show_separate === 'yes' && $include_handling !== 'yes' && isset($cart_item['wcepo_handling_fee']) && $cart_item['wcepo_handling_fee'] > 0) {
+        // Show price breakdown if we have a handling fee
+        if ($show_separate === 'yes' && isset($cart_item['wcepo_handling_fee']) && $cart_item['wcepo_handling_fee'] > 0) {
             $handling_fee_label = get_option('wcepo_handling_fee_label', __('Handling Fee', 'wc-extra-product-options'));
+            $price_display = WCEPO_Price_Display::get_instance();
 
+            // Get base price
+            $base_price = isset($cart_item['wcepo_base_price']) ? $cart_item['wcepo_base_price'] : 0;
+
+            if ($base_price > 0) {
+                // Convert prices to display currency
+                $base_price_display = $price_display->convert_price_for_display($base_price);
+                $handling_fee_display = $price_display->convert_price_for_display($cart_item['wcepo_handling_fee']);
+
+                // Add base price row
+                $item_data[] = array(
+                    'key'   => __('Product Price', 'wc-extra-product-options'),
+                    'value' => $price_display->format_price_html($base_price_display),
+                );
+            }
+
+            // Add handling fee row
+            $handling_fee_display = $price_display->convert_price_for_display($cart_item['wcepo_handling_fee']);
             $item_data[] = array(
                 'key'   => $handling_fee_label,
-                'value' => wc_price($cart_item['wcepo_handling_fee']),
+                'value' => $price_display->format_price_html($handling_fee_display),
             );
         }
 

@@ -7,6 +7,8 @@ A WordPress/WooCommerce plugin that enhances product pricing display and adds ha
 1. **Lowest Price Display** - Shows minimum price with "From..." prefix for variable products
 2. **Handling Fees** - Configurable fees at product and variation level
 3. **Dynamic Price Updates** - Price changes when variations are selected
+4. **Price Breakdown** - Shows product price and handling fee breakdown on product page, cart, and checkout
+5. **Shortcode Support** - `[wcepo_price_breakdown]` shortcode for displaying price breakdown anywhere
 
 ## File Structure
 ```
@@ -95,3 +97,46 @@ The plugin integrates with the Vignette Currency Converter plugin for multi-curr
 3. Test handling fee appears in cart and order
 4. Verify HPOS compatibility in WooCommerce > Status > Features
 5. Test currency conversion with VCC plugin (if installed)
+6. Test price breakdown shortcode on product pages
+
+## Shortcodes
+
+### Price Breakdown Shortcode
+Display a price breakdown showing base price, handling fee, and total.
+
+**Usage:**
+```
+[wcepo_price_breakdown]
+[wcepo_price_breakdown product_id="123"]
+[wcepo_price_breakdown show_total="yes" layout="horizontal"]
+```
+
+**Attributes:**
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `product_id` | Current product | Specific product ID to display |
+| `show_total` | "yes" | Show total row (`yes`/`no`) |
+| `layout` | "vertical" | Layout style (`vertical`/`horizontal`) |
+| `class` | "" | Additional CSS class |
+
+**Programmatic Usage:**
+```php
+$price_display = WCEPO_Price_Display::get_instance();
+
+// Get breakdown data array
+$breakdown = $price_display->get_price_breakdown($product);
+
+// Render breakdown HTML
+echo $price_display->render_price_breakdown($product, array(
+    'show_total' => true,
+    'layout' => 'vertical'
+));
+```
+
+## Price Breakdown in Cart
+
+When `wcepo_show_handling_fee_separately` is set to "yes", the cart displays:
+- **Product Price**: Base product/variation price
+- **Handling Fee**: The configured handling fee
+
+These are shown as additional item data rows in the cart and checkout.

@@ -51,3 +51,101 @@
     display: block;
     margin-top: 3px;
 }
+
+/* Price Breakdown Styles */
+.wcepo-price-breakdown {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+}
+
+.wcepo-price-breakdown .wcepo-breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px dotted #dee2e6;
+}
+
+.wcepo-price-breakdown .wcepo-breakdown-row:last-child {
+    border-bottom: none;
+}
+
+.wcepo-price-breakdown .wcepo-breakdown-label {
+    color: #495057;
+    font-size: 0.95em;
+}
+
+.wcepo-price-breakdown .wcepo-breakdown-value {
+    font-weight: 500;
+    color: #212529;
+}
+
+/* Total row styling */
+.wcepo-price-breakdown .wcepo-total {
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 2px solid #dee2e6;
+    border-bottom: none;
+}
+
+.wcepo-price-breakdown .wcepo-total .wcepo-breakdown-label,
+.wcepo-price-breakdown .wcepo-total .wcepo-breakdown-value {
+    font-weight: 700;
+    font-size: 1.05em;
+}
+
+.wcepo-price-breakdown .wcepo-total-price {
+    color: #0073aa;
+}
+
+/* Horizontal layout */
+.wcepo-breakdown-horizontal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 12px 15px;
+}
+
+.wcepo-breakdown-horizontal .wcepo-breakdown-row {
+    flex: 0 0 auto;
+    padding: 0;
+    border-bottom: none;
+    gap: 8px;
+}
+
+.wcepo-breakdown-horizontal .wcepo-total {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    padding-left: 15px;
+    border-left: 2px solid #dee2e6;
+}
+
+/* Handling fee highlight */
+.wcepo-price-breakdown .wcepo-handling-fee .wcepo-breakdown-label {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.wcepo-price-breakdown .wcepo-handling-fee .wcepo-breakdown-value {
+    color: #6c757d;
+    font-weight: 400;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .wcepo-breakdown-horizontal {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .wcepo-breakdown-horizontal .wcepo-total {
+        padding-left: 0;
+        border-left: none;
+        padding-top: 10px;
+        border-top: 2px solid #dee2e6;
+    }
+}
