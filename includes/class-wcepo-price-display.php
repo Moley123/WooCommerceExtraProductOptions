@@ -346,10 +346,6 @@ class WCEPO_Price_Display {
             return $price;
         }
 
-        if (!is_product()) {
-            return $price;
-        }
-
         // Ensure we have a valid product object
         if (!$product || !is_a($product, 'WC_Product')) {
             return $price;
@@ -395,11 +391,6 @@ class WCEPO_Price_Display {
             return $price;
         }
 
-        // Only modify on single product pages
-        if (!is_product()) {
-            return $price;
-        }
-
         // Ensure we have a valid product object
         if (!$product || !is_a($product, 'WC_Product')) {
             return $price;
@@ -421,17 +412,22 @@ class WCEPO_Price_Display {
             return $price;
         }
 
+        self::$calculating_price = true;
+
         $handling_fee = $this->get_handling_fee($product->get_id(), $product);
 
         if ($handling_fee <= 0) {
+            self::$calculating_price = false;
             return $price;
         }
 
         // Calculate total price in GBP
-        $total_price_gbp = $product->get_price() + $handling_fee;
+        $total_price_gbp = (float) $product->get_price() + $handling_fee;
 
         // Convert to selected currency if VCC is active
         $display_price = $this->convert_price_for_display($total_price_gbp);
+
+        self::$calculating_price = false;
 
         // Format with appropriate currency
         return '<span class="wcepo-price-wrapper">' . $this->format_price_html($display_price) . '</span>';
