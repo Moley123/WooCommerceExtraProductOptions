@@ -67,11 +67,11 @@ class WCEPO_Price_Display {
      * Initialize hooks
      */
     private function init_hooks() {
-        // Filter variable product price display
-        add_filter('woocommerce_variable_price_html', array($this, 'modify_variable_price_html'), 10, 2);
+        // Filter variable product price display (high priority to run after other plugins like VCC)
+        add_filter('woocommerce_variable_price_html', array($this, 'modify_variable_price_html'), 999, 2);
 
-        // Filter single product price display
-        add_filter('woocommerce_get_price_html', array($this, 'modify_price_html'), 10, 2);
+        // Filter single product price display (high priority to run after other plugins like VCC)
+        add_filter('woocommerce_get_price_html', array($this, 'modify_price_html'), 999, 2);
 
         // Filter variation price in JSON data for JavaScript
         add_filter('woocommerce_available_variation', array($this, 'modify_variation_data'), 10, 3);
@@ -351,10 +351,16 @@ class WCEPO_Price_Display {
             return $price;
         }
 
+        // Skip if already wrapped (avoid double processing)
+        if (strpos($price, 'wcepo-price-wrapper') !== false) {
+            return $price;
+        }
+
         self::$calculating_price = true;
 
         $show_from = get_option('wcepo_show_from_text', 'yes');
         $from_text = get_option('wcepo_from_text', __('From', 'wc-extra-product-options'));
+        $include_handling = get_option('wcepo_include_handling_in_price', 'yes');
 
         // Get minimum total price in GBP (including handling fee if applicable)
         $min_price_gbp = $this->get_min_total_price($product);
@@ -373,6 +379,11 @@ class WCEPO_Price_Display {
             }
 
             return '<span class="wcepo-price-wrapper">' . $price_html . '</span>';
+        }
+
+        // Fallback: If we couldn't calculate price but should show "From", add it to existing price
+        if ($show_from === 'yes' && !empty($price) && strpos($price, 'wcepo-from-text') === false) {
+            return '<span class="wcepo-price-wrapper"><span class="wcepo-from-text">' . esc_html($from_text) . '</span> ' . $price . '</span>';
         }
 
         return $price;

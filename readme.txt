@@ -6,7 +6,7 @@ Tested up to: 6.4
 Requires PHP: 7.4
 WC requires at least: 5.0
 WC tested up to: 8.0
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,10 @@ Yes! The plugin integrates with the Vignette Currency Converter (VCC) plugin. Wh
 
 == Changelog ==
 
+= 1.0.6 =
+* Fixed "From" text not showing on shop/category pages for variable products
+* Improved compatibility with VCC and other price display plugins
+
 = 1.0.5 =
 * Handling fee is now ALWAYS added to cart subtotal/total regardless of display settings
 * Handling fee breakdown now ALWAYS shows in cart/checkout
@@ -118,6 +122,9 @@ Yes! The plugin integrates with the Vignette Currency Converter (VCC) plugin. Wh
 * Settings page for customization
 
 == Upgrade Notice ==
+
+= 1.0.6 =
+Fixed "From" text not showing on shop/category pages. Improved VCC compatibility.
 
 = 1.0.5 =
 Critical fix: Handling fee now always added to cart totals. Display settings only affect product page.

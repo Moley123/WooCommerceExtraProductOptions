@@ -5,6 +5,14 @@ All notable changes to WooCommerce Extra Product Options will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2026-02-17
+
+### Fixed
+- "From" text now shows on shop/category pages for variable products
+- Increased filter priority to 999 to ensure compatibility with VCC and other price plugins
+- Added fallback to add "From" text even when price calculation fails
+- Added check to prevent double processing of price HTML
+
 ## [1.0.5] - 2026-02-17
 
 ### Fixed
