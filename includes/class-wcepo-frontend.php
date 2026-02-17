@@ -207,10 +207,8 @@ class WCEPO_Frontend {
      * @return array
      */
     public function display_handling_fee_in_cart($item_data, $cart_item) {
-        $show_separate = get_option('wcepo_show_handling_fee_separately', 'no');
-
-        // Show price breakdown if we have a handling fee
-        if ($show_separate === 'yes' && isset($cart_item['wcepo_handling_fee']) && $cart_item['wcepo_handling_fee'] > 0) {
+        // Always show price breakdown in cart/checkout if there's a handling fee
+        if (isset($cart_item['wcepo_handling_fee']) && $cart_item['wcepo_handling_fee'] > 0) {
             $handling_fee_label = get_option('wcepo_handling_fee_label', __('Handling Fee', 'wc-extra-product-options'));
             $price_display = WCEPO_Price_Display::get_instance();
 
@@ -220,7 +218,6 @@ class WCEPO_Frontend {
             if ($base_price > 0) {
                 // Convert prices to display currency
                 $base_price_display = $price_display->convert_price_for_display($base_price);
-                $handling_fee_display = $price_display->convert_price_for_display($cart_item['wcepo_handling_fee']);
 
                 // Add base price row
                 $item_data[] = array(
@@ -242,6 +239,7 @@ class WCEPO_Frontend {
 
     /**
      * Add handling fee to cart item price
+     * Note: Handling fee is ALWAYS added to the cart total regardless of display settings
      *
      * @param WC_Cart $cart Cart object
      */
@@ -254,16 +252,10 @@ class WCEPO_Frontend {
             return;
         }
 
-        $include_handling = get_option('wcepo_include_handling_in_price', 'yes');
-
-        if ($include_handling !== 'yes') {
-            return;
-        }
-
         foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
             if (isset($cart_item['wcepo_handling_fee']) && $cart_item['wcepo_handling_fee'] > 0) {
                 $product = $cart_item['data'];
-                $original_price = $product->get_price();
+                $original_price = (float) $product->get_price();
                 $new_price = $original_price + $cart_item['wcepo_handling_fee'];
                 $product->set_price($new_price);
             }

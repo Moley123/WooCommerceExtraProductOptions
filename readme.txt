@@ -6,7 +6,7 @@ Tested up to: 6.4
 Requires PHP: 7.4
 WC requires at least: 5.0
 WC tested up to: 8.0
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,11 @@ Yes! The plugin integrates with the Vignette Currency Converter (VCC) plugin. Wh
 
 == Changelog ==
 
+= 1.0.5 =
+* Handling fee is now ALWAYS added to cart subtotal/total regardless of display settings
+* Handling fee breakdown now ALWAYS shows in cart/checkout
+* "Include in Price Display" and "Show Fee Separately" settings now only affect product page display
+
 = 1.0.4 =
 * Fixed product page price not including handling fee when "Include in Price Display" is enabled
 * Improved price display reliability across all page contexts
@@ -113,6 +118,9 @@ Yes! The plugin integrates with the Vignette Currency Converter (VCC) plugin. Wh
 * Settings page for customization
 
 == Upgrade Notice ==
+
+= 1.0.5 =
+Critical fix: Handling fee now always added to cart totals. Display settings only affect product page.
 
 = 1.0.4 =
 Fixes product page price display when "Include in Price Display" is enabled.

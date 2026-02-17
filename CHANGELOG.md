@@ -5,6 +5,17 @@ All notable changes to WooCommerce Extra Product Options will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2026-02-17
+
+### Fixed
+- Handling fee is now ALWAYS added to cart subtotal/total regardless of display settings
+- Handling fee breakdown now ALWAYS shows in cart/checkout (not tied to "Show Fee Separately" setting)
+- "Include in Price Display" setting now only affects the product page price display, not cart totals
+- "Show Fee Separately" setting now only affects the product page, cart always shows breakdown
+
+### Changed
+- Clarified that display settings only affect product page, not cart/checkout behavior
+
 ## [1.0.4] - 2026-02-17
 
 ### Fixed
