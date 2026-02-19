@@ -49,10 +49,17 @@ class WCEPO_Settings {
     }
 
     /**
+     * Parent menu slug for EMEL plugins
+     *
+     * @var string
+     */
+    private $parent_slug = 'emel-wp-plugins';
+
+    /**
      * Initialize hooks
      */
     private function init_hooks() {
-        // Add settings page
+        // Add settings page under EMEL WP Plugins menu
         add_action('admin_menu', array($this, 'add_settings_page'));
 
         // Register settings
@@ -60,22 +67,33 @@ class WCEPO_Settings {
 
         // Add settings link to plugins page
         add_filter('plugin_action_links_' . WCEPO_PLUGIN_BASENAME, array($this, 'add_settings_link'));
-
-        // Add WooCommerce settings tab
-        add_filter('woocommerce_settings_tabs_array', array($this, 'add_settings_tab'), 50);
-        add_action('woocommerce_settings_tabs_wcepo', array($this, 'settings_tab_content'));
-        add_action('woocommerce_update_options_wcepo', array($this, 'update_settings'));
     }
 
     /**
-     * Add settings page to admin menu
+     * Add settings page to admin menu under EMEL WP Plugins
      */
     public function add_settings_page() {
+        // Create the top-level EMEL WP Plugins menu if it doesn't exist
+        if (!isset($GLOBALS['admin_page_hooks'][$this->parent_slug])) {
+            add_menu_page(
+                __('EMEL WP Plugins', 'wc-extra-product-options'),
+                __('EMEL WP Plugins', 'wc-extra-product-options'),
+                'manage_options',
+                $this->parent_slug,
+                '__return_null',
+                'dashicons-admin-plugins',
+                58
+            );
+            // Remove the duplicate submenu item that WordPress creates
+            remove_submenu_page($this->parent_slug, $this->parent_slug);
+        }
+
+        // Add our settings page as a submenu
         add_submenu_page(
-            'woocommerce',
+            $this->parent_slug,
             __('Extra Product Options', 'wc-extra-product-options'),
             __('Extra Product Options', 'wc-extra-product-options'),
-            'manage_woocommerce',
+            'manage_options',
             $this->settings_page,
             array($this, 'render_settings_page')
         );
@@ -345,125 +363,4 @@ class WCEPO_Settings {
         return $links;
     }
 
-    /**
-     * Add WooCommerce settings tab
-     *
-     * @param array $tabs Settings tabs
-     * @return array
-     */
-    public function add_settings_tab($tabs) {
-        $tabs['wcepo'] = __('Extra Product Options', 'wc-extra-product-options');
-        return $tabs;
-    }
-
-    /**
-     * Settings tab content
-     */
-    public function settings_tab_content() {
-        woocommerce_admin_fields($this->get_settings());
-    }
-
-    /**
-     * Update settings
-     */
-    public function update_settings() {
-        woocommerce_update_options($this->get_settings());
-    }
-
-    /**
-     * Get settings for WooCommerce settings tab
-     *
-     * @return array
-     */
-    private function get_settings() {
-        $settings = array(
-            array(
-                'title' => __('Price Display Settings', 'wc-extra-product-options'),
-                'type'  => 'title',
-                'id'    => 'wcepo_price_display_options',
-            ),
-            array(
-                'title'    => __('From Text', 'wc-extra-product-options'),
-                'desc'     => __('Text displayed before the minimum price (e.g., "From", "Starting at").', 'wc-extra-product-options'),
-                'id'       => 'wcepo_from_text',
-                'default'  => __('From', 'wc-extra-product-options'),
-                'type'     => 'text',
-                'desc_tip' => true,
-            ),
-            array(
-                'title'   => __('Show "From" Text', 'wc-extra-product-options'),
-                'desc'    => __('Display "From" text before the minimum price for variable products.', 'wc-extra-product-options'),
-                'id'      => 'wcepo_show_from_text',
-                'default' => 'yes',
-                'type'    => 'checkbox',
-            ),
-            array(
-                'title'   => __('Format Sale Price', 'wc-extra-product-options'),
-                'desc'    => __('Show regular price and sale price format (e.g., From <del>£40</del> £38).', 'wc-extra-product-options'),
-                'id'      => 'wcepo_format_sale_price',
-                'default' => 'no',
-                'type'    => 'checkbox',
-            ),
-            array(
-                'type' => 'sectionend',
-                'id'   => 'wcepo_price_display_options',
-            ),
-            array(
-                'title' => __('Variable Product Settings', 'wc-extra-product-options'),
-                'type'  => 'title',
-                'id'    => 'wcepo_variable_product_options',
-            ),
-            array(
-                'title'   => __('Hide Default Price', 'wc-extra-product-options'),
-                'desc'    => __("Don't display the default variation price range until a variation is selected.", 'wc-extra-product-options'),
-                'id'      => 'wcepo_hide_default_price',
-                'default' => 'no',
-                'type'    => 'checkbox',
-            ),
-            array(
-                'title'   => __('Hide Reset Link', 'wc-extra-product-options'),
-                'desc'    => __('Remove "Clear" link on single product page.', 'wc-extra-product-options'),
-                'id'      => 'wcepo_hide_reset_link',
-                'default' => 'no',
-                'type'    => 'checkbox',
-            ),
-            array(
-                'type' => 'sectionend',
-                'id'   => 'wcepo_variable_product_options',
-            ),
-            array(
-                'title' => __('Handling Fee Settings', 'wc-extra-product-options'),
-                'type'  => 'title',
-                'id'    => 'wcepo_handling_fee_options',
-            ),
-            array(
-                'title'    => __('Handling Fee Label', 'wc-extra-product-options'),
-                'desc'     => __('Label displayed for the handling fee.', 'wc-extra-product-options'),
-                'id'       => 'wcepo_handling_fee_label',
-                'default'  => __('Handling Fee', 'wc-extra-product-options'),
-                'type'     => 'text',
-                'desc_tip' => true,
-            ),
-            array(
-                'title'   => __('Include in Price Display', 'wc-extra-product-options'),
-                'desc'    => __('Include handling fee in the displayed product price.', 'wc-extra-product-options'),
-                'id'      => 'wcepo_include_handling_in_price',
-                'default' => 'yes',
-                'type'    => 'checkbox',
-            ),
-            array(
-                'title'   => __('Show Fee Separately', 'wc-extra-product-options'),
-                'desc'    => __('Show handling fee as a separate line item on the product page.', 'wc-extra-product-options'),
-                'id'      => 'wcepo_show_handling_fee_separately',
-                'default' => 'no',
-                'type'    => 'checkbox',
-            ),
-            array(
-                'type' => 'sectionend',
-                'id'   => 'wcepo_handling_fee_options',
-            ),
-        );
-
-        return $settings;
-    }
 }
