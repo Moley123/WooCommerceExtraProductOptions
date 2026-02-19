@@ -6,7 +6,7 @@ Tested up to: 6.4
 Requires PHP: 7.4
 WC requires at least: 5.0
 WC tested up to: 8.0
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,12 @@ Yes! The plugin integrates with the Vignette Currency Converter (VCC) plugin. Wh
 
 == Changelog ==
 
+= 1.0.7 =
+* Added "Hide Default Price" option - hide variation price until selection is made
+* Added "Hide Reset Link" option - remove Clear link on product pages
+* Added "Format Sale Price" option - show regular and sale price (e.g., From ~~£40~~ £38)
+* Added new "Variable Product Settings" section in settings page
+
 = 1.0.6 =
 * Fixed "From" text not showing on shop/category pages for variable products
 * Improved compatibility with VCC and other price display plugins
@@ -122,6 +128,9 @@ Yes! The plugin integrates with the Vignette Currency Converter (VCC) plugin. Wh
 * Settings page for customization
 
 == Upgrade Notice ==
+
+= 1.0.7 =
+New features: Hide Default Price, Hide Reset Link, Format Sale Price options.
 
 = 1.0.6 =
 Fixed "From" text not showing on shop/category pages. Improved VCC compatibility.

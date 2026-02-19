@@ -5,6 +5,16 @@ All notable changes to WooCommerce Extra Product Options will be documented in t
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-02-17
+
+### Added
+- **Hide Default Price** option - Don't display variation price until selection is made
+- **Hide Reset Link** option - Remove "Clear" link on single product page
+- **Format Sale Price** option - Show regular and sale price format (e.g., From ~~£40~~ £38)
+- New "Variable Product Settings" section in settings page
+- Helper methods: `get_min_regular_price()` and `has_sale_variations()`
+- CSS styling for sale price strikethrough format
+
 ## [1.0.6] - 2026-02-17
 
 ### Fixed

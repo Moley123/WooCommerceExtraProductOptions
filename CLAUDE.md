@@ -45,6 +45,9 @@ A WordPress/WooCommerce plugin that enhances product pricing display and adds ha
 | `wcepo_show_from_text` | "yes" | Show/hide "From" text |
 | `wcepo_include_handling_in_price` | "yes" | Include fee in displayed price |
 | `wcepo_show_handling_fee_separately` | "no" | Show fee as separate line |
+| `wcepo_hide_default_price` | "no" | Hide price until variation selected |
+| `wcepo_hide_reset_link` | "no" | Hide Clear/Reset link |
+| `wcepo_format_sale_price` | "no" | Show regular + sale price format |
 
 ## Key WooCommerce Hooks
 

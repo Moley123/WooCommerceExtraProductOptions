@@ -334,6 +334,83 @@ class WCEPO_Price_Display {
     }
 
     /**
+     * Get the minimum regular price for a variable product (before sale discount)
+     *
+     * @param WC_Product_Variable $product Variable product
+     * @return float
+     */
+    public function get_min_regular_price($product) {
+        if (!$product->is_type('variable')) {
+            $regular_price = (float) $product->get_regular_price();
+            $include_handling = get_option('wcepo_include_handling_in_price', 'yes');
+            if ($include_handling === 'yes') {
+                $handling_fee = $this->get_handling_fee($product->get_id(), $product);
+                $regular_price += $handling_fee;
+            }
+            return $regular_price;
+        }
+
+        // Use get_children() instead of get_available_variations() to avoid recursion
+        $variation_ids = $product->get_children();
+
+        if (empty($variation_ids)) {
+            return 0;
+        }
+
+        $min_regular_price = PHP_FLOAT_MAX;
+        $include_handling = get_option('wcepo_include_handling_in_price', 'yes');
+
+        foreach ($variation_ids as $variation_id) {
+            $variation = wc_get_product($variation_id);
+
+            if (!$variation || !$variation->is_purchasable() || !$variation->is_in_stock()) {
+                continue;
+            }
+
+            $regular_price = (float) $variation->get_regular_price();
+
+            if ($regular_price <= 0) {
+                continue;
+            }
+
+            // Add handling fee if applicable
+            if ($include_handling === 'yes') {
+                $handling_fee = $this->get_handling_fee($variation_id, $variation);
+                $regular_price += $handling_fee;
+            }
+
+            if ($regular_price < $min_regular_price) {
+                $min_regular_price = $regular_price;
+            }
+        }
+
+        return $min_regular_price === PHP_FLOAT_MAX ? 0 : $min_regular_price;
+    }
+
+    /**
+     * Check if a variable product has any variations on sale
+     *
+     * @param WC_Product_Variable $product Variable product
+     * @return bool
+     */
+    public function has_sale_variations($product) {
+        if (!$product->is_type('variable')) {
+            return $product->is_on_sale();
+        }
+
+        $variation_ids = $product->get_children();
+
+        foreach ($variation_ids as $variation_id) {
+            $variation = wc_get_product($variation_id);
+            if ($variation && $variation->is_on_sale()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Modify variable product price HTML
      *
      * @param string              $price   Price HTML
@@ -360,7 +437,7 @@ class WCEPO_Price_Display {
 
         $show_from = get_option('wcepo_show_from_text', 'yes');
         $from_text = get_option('wcepo_from_text', __('From', 'wc-extra-product-options'));
-        $include_handling = get_option('wcepo_include_handling_in_price', 'yes');
+        $format_sale_price = get_option('wcepo_format_sale_price', 'no');
 
         // Get minimum total price in GBP (including handling fee if applicable)
         $min_price_gbp = $this->get_min_total_price($product);
@@ -371,8 +448,23 @@ class WCEPO_Price_Display {
             // Convert to selected currency if VCC is active
             $display_price = $this->convert_price_for_display($min_price_gbp);
 
-            // Format with appropriate currency
-            $price_html = $this->format_price_html($display_price);
+            // Check if we should show sale price format
+            $price_html = '';
+            if ($format_sale_price === 'yes' && $this->has_sale_variations($product)) {
+                // Get regular price (before sale)
+                $regular_price_gbp = $this->get_min_regular_price($product);
+                $regular_display_price = $this->convert_price_for_display($regular_price_gbp);
+
+                // Only show strikethrough if regular price is higher than sale price
+                if ($regular_price_gbp > $min_price_gbp) {
+                    $price_html = '<del>' . $this->format_price_html($regular_display_price) . '</del> <ins>' . $this->format_price_html($display_price) . '</ins>';
+                } else {
+                    $price_html = $this->format_price_html($display_price);
+                }
+            } else {
+                // Format with appropriate currency
+                $price_html = $this->format_price_html($display_price);
+            }
 
             if ($show_from === 'yes') {
                 $price_html = '<span class="wcepo-from-text">' . esc_html($from_text) . '</span> ' . $price_html;

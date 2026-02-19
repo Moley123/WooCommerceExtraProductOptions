@@ -91,12 +91,22 @@ class WCEPO_Settings {
         register_setting('wcepo_settings', 'wcepo_show_from_text');
         register_setting('wcepo_settings', 'wcepo_include_handling_in_price');
         register_setting('wcepo_settings', 'wcepo_show_handling_fee_separately');
+        register_setting('wcepo_settings', 'wcepo_hide_default_price');
+        register_setting('wcepo_settings', 'wcepo_hide_reset_link');
+        register_setting('wcepo_settings', 'wcepo_format_sale_price');
 
         // Add settings sections
         add_settings_section(
             'wcepo_price_display_section',
             __('Price Display Settings', 'wc-extra-product-options'),
             array($this, 'price_display_section_callback'),
+            $this->settings_page
+        );
+
+        add_settings_section(
+            'wcepo_variable_product_section',
+            __('Variable Product Settings', 'wc-extra-product-options'),
+            array($this, 'variable_product_section_callback'),
             $this->settings_page
         );
 
@@ -122,6 +132,31 @@ class WCEPO_Settings {
             array($this, 'show_from_text_field_callback'),
             $this->settings_page,
             'wcepo_price_display_section'
+        );
+
+        add_settings_field(
+            'wcepo_format_sale_price',
+            __('Format Sale Price', 'wc-extra-product-options'),
+            array($this, 'format_sale_price_field_callback'),
+            $this->settings_page,
+            'wcepo_price_display_section'
+        );
+
+        // Variable product fields
+        add_settings_field(
+            'wcepo_hide_default_price',
+            __('Hide Default Price', 'wc-extra-product-options'),
+            array($this, 'hide_default_price_field_callback'),
+            $this->settings_page,
+            'wcepo_variable_product_section'
+        );
+
+        add_settings_field(
+            'wcepo_hide_reset_link',
+            __('Hide Reset Link', 'wc-extra-product-options'),
+            array($this, 'hide_reset_link_field_callback'),
+            $this->settings_page,
+            'wcepo_variable_product_section'
         );
 
         // Handling fee fields
@@ -158,6 +193,13 @@ class WCEPO_Settings {
     }
 
     /**
+     * Variable product section callback
+     */
+    public function variable_product_section_callback() {
+        echo '<p>' . esc_html__('Configure settings specific to variable products.', 'wc-extra-product-options') . '</p>';
+    }
+
+    /**
      * Handling fee section callback
      */
     public function handling_fee_section_callback() {
@@ -185,6 +227,48 @@ class WCEPO_Settings {
             <input type="checkbox" name="wcepo_show_from_text" value="yes" <?php checked($value, 'yes'); ?> />
             <?php esc_html_e('Display "From" text before the minimum price for variable products.', 'wc-extra-product-options'); ?>
         </label>
+        <?php
+    }
+
+    /**
+     * Format sale price field callback
+     */
+    public function format_sale_price_field_callback() {
+        $value = get_option('wcepo_format_sale_price', 'no');
+        ?>
+        <label>
+            <input type="checkbox" name="wcepo_format_sale_price" value="yes" <?php checked($value, 'yes'); ?> />
+            <?php esc_html_e('Show regular price and sale price format for products on sale.', 'wc-extra-product-options'); ?>
+        </label>
+        <p class="description"><?php esc_html_e('For example: From <del>£40</del> £38', 'wc-extra-product-options'); ?></p>
+        <?php
+    }
+
+    /**
+     * Hide default price field callback
+     */
+    public function hide_default_price_field_callback() {
+        $value = get_option('wcepo_hide_default_price', 'no');
+        ?>
+        <label>
+            <input type="checkbox" name="wcepo_hide_default_price" value="yes" <?php checked($value, 'yes'); ?> />
+            <?php esc_html_e("Don't display the default variation price range.", 'wc-extra-product-options'); ?>
+        </label>
+        <p class="description"><?php esc_html_e('Hides the price until a variation is selected.', 'wc-extra-product-options'); ?></p>
+        <?php
+    }
+
+    /**
+     * Hide reset link field callback
+     */
+    public function hide_reset_link_field_callback() {
+        $value = get_option('wcepo_hide_reset_link', 'no');
+        ?>
+        <label>
+            <input type="checkbox" name="wcepo_hide_reset_link" value="yes" <?php checked($value, 'yes'); ?> />
+            <?php esc_html_e('Remove "Clear" link on single product page.', 'wc-extra-product-options'); ?>
+        </label>
+        <p class="description"><?php esc_html_e('Hides the clear/reset link that appears after selecting a variation.', 'wc-extra-product-options'); ?></p>
         <?php
     }
 
@@ -314,8 +398,38 @@ class WCEPO_Settings {
                 'type'    => 'checkbox',
             ),
             array(
+                'title'   => __('Format Sale Price', 'wc-extra-product-options'),
+                'desc'    => __('Show regular price and sale price format (e.g., From <del>£40</del> £38).', 'wc-extra-product-options'),
+                'id'      => 'wcepo_format_sale_price',
+                'default' => 'no',
+                'type'    => 'checkbox',
+            ),
+            array(
                 'type' => 'sectionend',
                 'id'   => 'wcepo_price_display_options',
+            ),
+            array(
+                'title' => __('Variable Product Settings', 'wc-extra-product-options'),
+                'type'  => 'title',
+                'id'    => 'wcepo_variable_product_options',
+            ),
+            array(
+                'title'   => __('Hide Default Price', 'wc-extra-product-options'),
+                'desc'    => __("Don't display the default variation price range until a variation is selected.", 'wc-extra-product-options'),
+                'id'      => 'wcepo_hide_default_price',
+                'default' => 'no',
+                'type'    => 'checkbox',
+            ),
+            array(
+                'title'   => __('Hide Reset Link', 'wc-extra-product-options'),
+                'desc'    => __('Remove "Clear" link on single product page.', 'wc-extra-product-options'),
+                'id'      => 'wcepo_hide_reset_link',
+                'default' => 'no',
+                'type'    => 'checkbox',
+            ),
+            array(
+                'type' => 'sectionend',
+                'id'   => 'wcepo_variable_product_options',
             ),
             array(
                 'title' => __('Handling Fee Settings', 'wc-extra-product-options'),

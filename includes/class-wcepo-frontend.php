@@ -100,6 +100,30 @@ class WCEPO_Frontend {
             WCEPO_VERSION
         );
 
+        // Add inline CSS for variable product options
+        $inline_css = '';
+
+        // Hide default price option
+        $hide_default_price = get_option('wcepo_hide_default_price', 'no');
+        if ($hide_default_price === 'yes' && $product->is_type('variable')) {
+            $inline_css .= '
+                .woocommerce-variation-price { display: none !important; }
+                .single_variation_wrap .woocommerce-variation-price { display: block !important; }
+            ';
+        }
+
+        // Hide reset/clear link option
+        $hide_reset_link = get_option('wcepo_hide_reset_link', 'no');
+        if ($hide_reset_link === 'yes') {
+            $inline_css .= '
+                .reset_variations { display: none !important; }
+            ';
+        }
+
+        if (!empty($inline_css)) {
+            wp_add_inline_style('wcepo-frontend', $inline_css);
+        }
+
         // Localize script with settings
         $price_display = WCEPO_Price_Display::get_instance();
 
@@ -109,6 +133,8 @@ class WCEPO_Frontend {
             'include_handling'   => get_option('wcepo_include_handling_in_price', 'yes'),
             'show_fee_separate'  => get_option('wcepo_show_handling_fee_separately', 'no'),
             'handling_fee_label' => get_option('wcepo_handling_fee_label', __('Handling Fee', 'wc-extra-product-options')),
+            'format_sale_price'  => get_option('wcepo_format_sale_price', 'no'),
+            'hide_default_price' => get_option('wcepo_hide_default_price', 'no'),
             'currency_symbol'    => get_woocommerce_currency_symbol(),
             'currency_position'  => get_option('woocommerce_currency_pos'),
             'thousand_sep'       => wc_get_price_thousand_separator(),
